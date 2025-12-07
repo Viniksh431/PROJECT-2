@@ -1,0 +1,188 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+using namespace std;
+
+struct Student {
+    int roll;
+    string name;
+    float marks;
+};
+
+void addStudent();
+void displayStudents();
+void searchStudent();
+void updateStudent();
+void deleteStudent();
+
+int main() {
+    int choice;
+
+    while (true) {
+        cout << "\n====== STUDENT RECORD MANAGEMENT SYSTEM ======\n";
+        cout << "1. Add Student\n";
+        cout << "2. Display All Students\n";
+        cout << "3. Search Student by Roll Number\n";
+        cout << "4. Update Student\n";
+        cout << "5. Delete Student\n";
+        cout << "6. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: addStudent(); break;
+            case 2: displayStudents(); break;
+            case 3: searchStudent(); break;
+            case 4: updateStudent(); break;
+            case 5: deleteStudent(); break;
+            case 6: exit(0);
+            default: cout << "Invalid choice! Please try again.\n";
+        }
+    }
+    return 0;
+}
+
+void addStudent() {
+    ofstream fp("students.dat", ios::binary | ios::app);
+    Student s;
+
+    cout << "Enter Roll Number: ";
+    cin >> s.roll;
+
+    cout << "Enter Name: ";
+    cin.ignore();
+    getline(cin, s.name);
+
+    cout << "Enter Marks: ";
+    cin >> s.marks;
+
+    fp.write(reinterpret_cast<char*>(&s), sizeof(s));
+    fp.close();
+
+    cout << "Student added successfully!\n";
+}
+
+void displayStudents() {
+    ifstream fp("students.dat", ios::binary);
+    Student s;
+
+    if (!fp) {
+        cout << "No records found!\n";
+        return;
+    }
+
+    cout << "\n----- Student List -----\n";
+
+    while (fp.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        cout << "Roll: " << s.roll << endl;
+        cout << "Name: " << s.name << endl;
+        cout << "Marks: " << s.marks << endl;
+        cout << "-----------------------\n";
+    }
+
+    fp.close();
+}
+
+void searchStudent() {
+    ifstream fp("students.dat", ios::binary);
+    Student s;
+    int roll;
+    bool found = false;
+
+    if (!fp) {
+        cout << "No records available!\n";
+        return;
+    }
+
+    cout << "Enter Roll Number to Search: ";
+    cin >> roll;
+
+    while (fp.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        if (s.roll == roll) {
+            cout << "Record Found!\n";
+            cout << "Roll: " << s.roll << endl;
+            cout << "Name: " << s.name << endl;
+            cout << "Marks: " << s.marks << endl;
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+        cout << "Student not found!\n";
+
+    fp.close();
+}
+
+void updateStudent() {
+    fstream fp("students.dat", ios::binary | ios::in | ios::out);
+    Student s;
+    int roll;
+    bool found = false;
+
+    if (!fp) {
+        cout << "No records available!\n";
+        return;
+    }
+
+    cout << "Enter Roll Number to Update: ";
+    cin >> roll;
+
+    while (fp.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        if (s.roll == roll) {
+            cout << "Enter new name: ";
+            cin.ignore();
+            getline(cin, s.name);
+
+            cout << "Enter new marks: ";
+            cin >> s.marks;
+
+            fp.seekp(-sizeof(s), ios::cur);
+            fp.write(reinterpret_cast<char*>(&s), sizeof(s));
+
+            cout << "Record updated successfully!\n";
+            found = true;
+            break;
+        }
+    }
+
+    if (!found)
+        cout << "Student not found!\n";
+
+    fp.close();
+}
+
+void deleteStudent() {
+    ifstream fp("students.dat", ios::binary);
+    ofstream temp("temp.dat", ios::binary);
+    Student s;
+    int roll;
+    bool found = false;
+
+    if (!fp) {
+        cout << "No records available!\n";
+        return;
+    }
+
+    cout << "Enter Roll Number to Delete: ";
+    cin >> roll;
+
+    while (fp.read(reinterpret_cast<char*>(&s), sizeof(s))) {
+        if (s.roll == roll) {
+            found = true;
+            continue;
+        }
+        temp.write(reinterpret_cast<char*>(&s), sizeof(s));
+    }
+
+    fp.close();
+    temp.close();
+
+    remove("students.dat");
+    rename("temp.dat", "students.dat");
+
+    if (found)
+        cout << "Record deleted successfully!\n";
+    else
+        cout << "Student not found!\n";
+}
